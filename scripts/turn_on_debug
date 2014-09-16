@@ -1,0 +1,3 @@
+echo -n 'format "Bosto" +p' > /sys/kernel/debug/dynamic_debug/control
+echo -n 'format "PEN" +p' > /sys/kernel/debug/dynamic_debug/control
+echo -n 'format "TOOL" +p' > /sys/kernel/debug/dynamic_debug/control
