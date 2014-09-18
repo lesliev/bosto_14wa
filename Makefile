@@ -5,10 +5,10 @@
 obj-m += bosto_14wa.o
  
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=/home/leslie/dev/git/external/tablet/bosto-les modules
+	make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) modules
  
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=/home/leslie/dev/git/external/tablet/bosto-les clean
+	make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) clean
 
 archive:
 	tar f - --exclude=.git -C ../ -c bosto_14wa | gzip -c9 > ../bosto_14wa-`date +%Y%m%d`.tgz
