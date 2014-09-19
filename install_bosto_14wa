@@ -42,12 +42,12 @@ class Installer
 		params.merge!({width: width}) if width
 		params.merge!({height: height}) if height
 
-    run('zenity', params(type) + hash_params(params), true)
+    run('zenity', params(type, 'no-wrap') + hash_params(params), true)
 		$?.exitstatus == 0
   end
 
 	def apt_get(packages)
-		@last_response = run('gksudo', "'apt-get install #{packages.join(' ')}'")
+		@last_response = run('gksudo', "'apt-get -y install #{packages.join(' ')}'")
 		$?.exitstatus == 0
 	end
 
@@ -61,12 +61,12 @@ class Installer
 	end	
 
 	def install
-		ok = zenity(:question, 'Welcome!\n\nThis program downloads, compiles and installs drivers for the 2nd generation Bosto 14WA graphics tablet.\n\nThe procedure is as follows:\n\n1. Install build essentials\n2. Download the driver\n3. Compile the driver\n4. Install the driver\n\nWould you like to proceed?', 500, 300)
+		ok = zenity(:info, 'Welcome!\n\nThis program downloads, compiles and installs drivers for the 2nd generation Bosto 14WA graphics tablet.\n\nThe procedure is as follows:\n\n1. Install build essentials\n2. Download the driver\n3. Compile the driver\n4. Install the driver\n\nNote: installing dependencies takes a few minutes, please be patient.\n\nWould you like to proceed?')
 		
 		exit(1) if !ok
 
 		# install dependencies
-		ok = apt_get(%w(build-essential linux-headers-generic wget))
+		ok = apt_get(%w(build-essential linux-headers-generic wget gksu))
 		croak("Sorry, something went wrong with installing the build system.") unless ok
 
 		# download driver
