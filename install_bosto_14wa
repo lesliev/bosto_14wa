@@ -1,91 +1,91 @@
 #!/usr/bin/env ruby
 
 class Installer
-	def initialize
-		@log_filename = "/tmp/bosto_14wa_install.log"
-		@logfile = File.open(@log_filename, 'w')
-		@author = 'leslieviljoen@gmail.com'
-		@source_source = 'https://github.com/lesliev/bosto_14wa/archive/master.tar.gz'
-		@source_target = '/tmp/bosto_14wa_driver.tar.gz'
-		@source_target_dir = '/tmp/bosto_14wa-master'
-	end
+  def initialize
+    @log_filename = "/tmp/bosto_14wa_install.log"
+    @logfile = File.open(@log_filename, 'w')
+    @author = 'leslieviljoen@gmail.com'
+    @source_source = 'https://github.com/lesliev/bosto_14wa/archive/master.tar.gz'
+    @source_target = '/tmp/bosto_14wa_driver.tar.gz'
+    @source_target_dir = '/tmp/bosto_14wa-master'
+  end
 
   def run(cmd, args=[], silent = false)
-		cmd = "#{cmd} #{Array(args).join(' ')}"
+    cmd = "#{cmd} #{Array(args).join(' ')}"
 
-		unless silent
-			@logfile.puts("----- #{Time.now}")
-			@logfile.puts("executing:")
-			@logfile.puts(cmd)
-		end
+    unless silent
+      @logfile.puts("----- #{Time.now}")
+      @logfile.puts("executing:")
+      @logfile.puts(cmd)
+    end
 
-		response = `#{cmd}`
+    response = `#{cmd}`
 
-		unless silent
-			@logfile.puts("response:")
-			@logfile.puts(response)
-		end
+    unless silent
+      @logfile.puts("response:")
+      @logfile.puts(response)
+    end
 
-		response
+    response
   end
 
-	def hash_params(hash)
-		hash.map{|k,v| "--#{k}='#{v}'"}
-	end
+  def hash_params(hash)
+    hash.map{|k,v| "--#{k}='#{v}'"}
+  end
 
-	def params(*list)
-		list.map{|p| "--#{p}"}
-	end
+  def params(*list)
+    list.map{|p| "--#{p}"}
+  end
 
   def zenity(type, text, width=nil, height=nil)
-		params = {text: text}
-		params.merge!({width: width}) if width
-		params.merge!({height: height}) if height
+    params = {text: text}
+    params.merge!({width: width}) if width
+    params.merge!({height: height}) if height
 
     run('zenity', params(type, 'no-wrap') + hash_params(params), true)
-		$?.exitstatus == 0
+    $?.exitstatus == 0
   end
 
-	def apt_get(packages)
-		@last_response = run('gksudo', "'apt-get -y install #{packages.join(' ')}'")
-		$?.exitstatus == 0
-	end
+  def apt_get(packages)
+    @last_response = run('gksudo', "'apt-get -y install #{packages.join(' ')}'")
+    $?.exitstatus == 0
+  end
 
-	def croak(message)
-		zenity(:error, message)
-		zenity(:info, "Installation failed, about to display log file. Please email this file to #{@author}.\\n\\nThe file is located at: #{@log_filename}")
+  def croak(message)
+    zenity(:error, message)
+    zenity(:info, "Installation failed, about to display log file. Please email this file to #{@author}.\\n\\nThe file is located at: #{@log_filename}")
 
-		@logfile.flush
+    @logfile.flush
     run('zenity', params('text-info') + hash_params(filename: @log_filename), true)
-		exit(1)
-	end	
+    exit(1)
+  end 
 
-	def install
-		ok = zenity(:info, 'Welcome!\n\nThis program downloads, compiles and installs drivers for the 2nd generation Bosto 14WA graphics tablet.\n\nThe procedure is as follows:\n\n1. Install build essentials\n2. Download the driver\n3. Compile the driver\n4. Install the driver\n\nNote: installing dependencies takes a few minutes, please be patient.\n\nWould you like to proceed?')
-		
-		exit(1) if !ok
+  def install
+    ok = zenity(:question, 'Welcome!\n\nThis program downloads, compiles and installs drivers for the 2nd generation Bosto 14WA graphics tablet.\n\nThe procedure is as follows:\n\n1. Install build essentials\n2. Download the driver\n3. Compile the driver\n4. Install the driver\n\nNote: installing dependencies takes a few minutes, please be patient.\n\nWould you like to proceed?')
+    
+    exit(1) if !ok
 
-		# install dependencies
-		ok = apt_get(%w(build-essential linux-headers-generic wget gksu))
-		croak("Sorry, something went wrong with installing the build system.") unless ok
+    # install dependencies
+    ok = apt_get(%w(build-essential linux-headers-generic wget gksu))
+    croak("Sorry, something went wrong with installing the build system.") unless ok
 
-		# download driver
-		fork do
-		  run(:wget, params('no-check-certificate') + hash_params('output-document' => @source_target) + [@source_source])
-		end
-		Process.wait
-		
-		# extract driver
-		run('tar xvf', [@source_target, '-C /tmp'])
+    # download driver
+    fork do
+      run(:wget, params('no-check-certificate') + hash_params('output-document' => @source_target) + [@source_source])
+    end
+    Process.wait
+    
+    # extract driver
+    run('tar xvf', [@source_target, '-C /tmp'])
 
-		# build driver
-		run('make', ['-C', @source_target_dir, 'clean'])
-		run('make', ['-C', @source_target_dir])
-		run('gksudo', "'make -C #{@source_target_dir} install'")
+    # build driver
+    run('make', ['-C', @source_target_dir, 'clean'])
+    run('make', ['-C', @source_target_dir])
+    run('gksudo', "'make -C #{@source_target_dir} install'")
 
-		# final message. TODO: check lsmod
-		zenity(:info, 'Installation complete!', 200, 100)
-	end
+    # final message. TODO: check lsmod
+    zenity(:info, 'Installation complete!', 200, 100)
+  end
 end
 
 Installer.new.install
