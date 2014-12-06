@@ -3,7 +3,8 @@
 .PHONY: all clean archive
 
 obj-m += bosto_14wa.o
- 
+ccflags-y := -Wall -Werror
+
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) modules
  
@@ -19,13 +20,13 @@ install:
 	depmod
 	cp ./scripts/insert_bosto_14wa /usr/local/bin
 	cp ./scripts/bosto_14wa.rules /etc/udev/rules.d
-	/sbin/udevadm control --reload
+	udevadm control --reload
 	modprobe bosto_14wa
 
 uninstall:
 	rm -f /usr/local/bin/insert_bosto_14wa
 	rm -f /etc/udev/rules.d/bosto_14wa.rules
-	/sbin/udevadm control --reload
+	udevadm control --reload
 	rm -f /lib/modules/$(shell uname -r)/bosto_14wa.ko
 	sed -i '/bosto_14wa/d' /etc/modules
 	depmod
