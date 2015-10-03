@@ -16,10 +16,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
  */
 #include <linux/jiffies.h>
 #include <linux/stat.h>
@@ -51,7 +47,7 @@ MODULE_LICENSE(DRIVER_LICENSE);
 #define BOSTO_TABLET_INT_PROTOCOL  0x0002
 
 /* Delay between TOOL_IN event and first reported pressure > 0 (in ms).
- * Used to supress settle time for pen ABS positions.
+ * Used to suppress settle time for pen ABS positions.
  */
 #define PEN_WRITE_DELAY  230
 #define PKGLEN_MAX        10
@@ -121,7 +117,7 @@ static const int hw_mscevents[] = {
 	MSC_SERIAL,
 };
 
-static struct input_dev* get_current_input(struct bosto *bosto)
+static struct input_dev *get_current_input(struct bosto *bosto)
 {
 	return (bosto->current_id == ERASER_DEVICE_ID) ? bosto->eraser : bosto->stylus;
 }
@@ -129,6 +125,7 @@ static struct input_dev* get_current_input(struct bosto *bosto)
 static void bosto_tool_out(struct bosto *bosto)
 {
 	struct input_dev *input_dev;
+
 	input_dev = get_current_input(bosto);
 	input_report_key(input_dev, bosto->current_tool, 0);
 	bosto->current_id = 0;
@@ -168,7 +165,8 @@ static void bosto_tool_in(struct bosto *bosto, unsigned long *stamp, u8 pen_end)
 	input_report_key(input_dev, tool, 1);
 }
 
-static void bosto_pen_float(struct bosto *bosto, u16 *p, u16 *x, u16 *y, u8 *data)
+static void bosto_pen_float(struct bosto *bosto, u16 *p, u16 *x, u16 *y,
+					u8 *data)
 {
 	struct input_dev *input_dev;
 	*x = (data[1] << 8) | data[2];      /* Set x ABS */
@@ -216,7 +214,10 @@ static void bosto_pen_contact(struct bosto *bosto, u16 *p, u16 *x, u16 *y,
 	 * and keep the button held down. Enjoy the pressure magnification.
 	 */
 
-	*p = jiffies > stamp ? (data[5] << 3) | ((data[6] & 0xc0) >> 5) : 0;
+	if (time_after(jiffies, stamp))
+		*p = (data[5] << 3) | ((data[6] & 0xc0) >> 5);
+	else
+		*p = 0;
 
 	switch (data[0]) {
 	case 0xe0 ... 0xe1:
@@ -277,14 +278,17 @@ static void bosto_parse_packet(struct bosto *bosto)
 		break;
 
 	case 0x0c:
-		dev_dbg(&dev->dev,"Tablet Event. Packet data[0]: %02x\n", data[0]);
+		dev_dbg(&dev->dev,
+			"Tablet Event. Packet data[0]: %02x\n", data[0]);
 		input_dev = get_current_input(bosto);
 		input_report_abs(input_dev, ABS_MISC, bosto->current_id);
 		input_event(input_dev, EV_MSC, MSC_SERIAL, bosto->features->pid);
 		input_sync(input_dev);
+		break;
 
 	default:
-		dev_dbg(&dev->dev, "Error packet. Packet data[0]:  %02x ", data[0]);
+		dev_dbg(&dev->dev,
+			"Error packet. Packet data[0]:  %02x\n", data[0]);
 		break;
 	}
 
@@ -331,6 +335,7 @@ static void bosto_irq(struct urb *urb)
 static int bosto_stylus_open(struct input_dev *dev)
 {
 	struct bosto *bosto = input_get_drvdata(dev);
+
 	bosto->urb0->dev = bosto->usbdev;
 	if (usb_submit_urb(bosto->urb0, GFP_KERNEL))
 		return -EIO;
@@ -341,12 +346,14 @@ static int bosto_stylus_open(struct input_dev *dev)
 static void bosto_stylus_close(struct input_dev *dev)
 {
 	struct bosto *bosto = input_get_drvdata(dev);
+
 	usb_kill_urb(bosto->urb0);
 }
 
 static int bosto_eraser_open(struct input_dev *dev)
 {
 	struct bosto *bosto = input_get_drvdata(dev);
+
 	bosto->urb1->dev = bosto->usbdev;
 	if (usb_submit_urb(bosto->urb1, GFP_KERNEL))
 		return -EIO;
@@ -357,6 +364,7 @@ static int bosto_eraser_open(struct input_dev *dev)
 static void bosto_eraser_close(struct input_dev *dev)
 {
 	struct bosto *bosto = input_get_drvdata(dev);
+
 	usb_kill_urb(bosto->urb1);
 }
 
@@ -375,9 +383,9 @@ static bool get_features(struct usb_device *dev, struct bosto *bosto)
 }
 
 static int bosto_create_input_device(struct usb_interface *intf,
-	struct usb_device* dev, struct bosto* bosto, struct urb** urb,
-	struct input_dev** device, const char* device_name,
-	int (*open)(struct input_dev*), void (*close)(struct input_dev*))
+	struct usb_device *dev, struct bosto *bosto, struct urb **urb,
+	struct input_dev **device, const char *device_name,
+	int (*open)(struct input_dev *), void (*close)(struct input_dev *))
 {
 	int i;
 	int status = NO_ERROR;
@@ -410,21 +418,17 @@ static int bosto_create_input_device(struct usb_interface *intf,
 			(*device)->open  = open;
 			(*device)->close = close;
 
-			for (i = 0; i < ARRAY_SIZE(hw_eventtypes); ++i) {
+			for (i = 0; i < ARRAY_SIZE(hw_eventtypes); ++i)
 				__set_bit(hw_eventtypes[i], (*device)->evbit);
-			}
 
-			for (i = 0; i < ARRAY_SIZE(hw_absevents); ++i) {
+			for (i = 0; i < ARRAY_SIZE(hw_absevents); ++i)
 				__set_bit(hw_absevents[i], (*device)->absbit);
-			}
 
-			for (i = 0; i < ARRAY_SIZE(hw_btnevents); ++i) {
+			for (i = 0; i < ARRAY_SIZE(hw_btnevents); ++i)
 				__set_bit(hw_btnevents[i], (*device)->keybit);
-			}
 
-			for (i = 0; i < ARRAY_SIZE(hw_mscevents); ++i) {
+			for (i = 0; i < ARRAY_SIZE(hw_mscevents); ++i)
 				__set_bit(hw_mscevents[i], (*device)->mscbit);
-			}
 
 			input_set_abs_params(*device, ABS_X, 0,
 					bosto->features->max_x, 0, 0);
@@ -433,7 +437,8 @@ static int bosto_create_input_device(struct usb_interface *intf,
 			input_set_abs_params(*device, ABS_PRESSURE, 0,
 					bosto->features->max_pressure, 0, 0);
 
-			if ((status = input_register_device(*device)) != NO_ERROR) {
+			status = input_register_device(*device);
+			if (status != NO_ERROR) {
 				input_free_device(*device);
 				usb_free_urb(*urb);
 			}
@@ -453,12 +458,14 @@ static int bosto_probe(struct usb_interface *intf, const struct usb_device_id *i
 	int status = NO_ERROR;
 	struct usb_device *dev = interface_to_usbdev(intf);
 
-	printk (KERN_INFO "Bosto_Probe checking Tablet.\n");
+	dev_info(&dev->dev, "Bosto_Probe checking Tablet\n");
+
 	bosto = kzalloc(sizeof(struct bosto), GFP_KERNEL);
 
-	if (bosto && get_features(dev, bosto) &&
-		(bosto->data = usb_alloc_coherent(dev, bosto->features->pkg_len,
-			GFP_KERNEL, &bosto->data_dma)) != NULL) {
+	bosto->data = usb_alloc_coherent(dev, bosto->features->pkg_len,
+			GFP_KERNEL, &bosto->data_dma);
+
+	if (bosto && get_features(dev, bosto) && bosto->data != NULL) {
 
 		bosto->usbdev = dev;
 		strlcpy(bosto->stylus_name, bosto->features->name,
@@ -531,7 +538,7 @@ static struct usb_driver bosto_driver = {
 
 static int __init bosto_init(void)
 {
-	printk(KERN_INFO "Bosto 2nd Generation USB Driver module being initialised.\n");
+	printk(KERN_INFO "Bosto 2nd Generation USB Driver module being initialised\n");
 	return usb_register(&bosto_driver);
 }
 
