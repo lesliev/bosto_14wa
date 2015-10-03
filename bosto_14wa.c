@@ -462,43 +462,47 @@ static int bosto_probe(struct usb_interface *intf, const struct usb_device_id *i
 
 	bosto = kzalloc(sizeof(struct bosto), GFP_KERNEL);
 
-	bosto->data = usb_alloc_coherent(dev, bosto->features->pkg_len,
+	if (bosto && get_features(dev, bosto)) {
+		bosto->data = usb_alloc_coherent(dev, bosto->features->pkg_len,
 			GFP_KERNEL, &bosto->data_dma);
 
-	if (bosto && get_features(dev, bosto) && bosto->data != NULL) {
+		if (bosto->data != NULL) {
+				bosto->usbdev = dev;
+			strlcpy(bosto->stylus_name, bosto->features->name,
+				sizeof(bosto->stylus_name));
+			strlcat(bosto->stylus_name, " stylus",
+				sizeof(bosto->stylus_name));
+			strlcpy(bosto->eraser_name, bosto->features->name,
+				sizeof(bosto->eraser_name));
+			strlcat(bosto->eraser_name, " eraser",
+				sizeof(bosto->eraser_name));
 
-		bosto->usbdev = dev;
-		strlcpy(bosto->stylus_name, bosto->features->name,
-			sizeof(bosto->stylus_name));
-		strlcat(bosto->stylus_name, " stylus",
-			sizeof(bosto->stylus_name));
-		strlcpy(bosto->eraser_name, bosto->features->name,
-			sizeof(bosto->eraser_name));
-		strlcat(bosto->eraser_name, " eraser",
-			sizeof(bosto->eraser_name));
-
-		status = bosto_create_input_device(intf, dev, bosto,
-				&bosto->urb0, &bosto->stylus, bosto->stylus_name,
-				bosto_stylus_open, bosto_stylus_close);
-
-		if (status == NO_ERROR) {
 			status = bosto_create_input_device(intf, dev, bosto,
-			&bosto->urb1, &bosto->eraser, bosto->eraser_name,
-			bosto_eraser_open, bosto_eraser_close);
-		}
+				&bosto->urb0, &bosto->stylus,
+				bosto->stylus_name, bosto_stylus_open,
+				bosto_stylus_close);
 
-		if (status != NO_ERROR) {
+			if (status == NO_ERROR) {
+				status = bosto_create_input_device(intf, dev,
+					bosto, &bosto->urb1, &bosto->eraser,
+					bosto->eraser_name, bosto_eraser_open,
+					bosto_eraser_close);
+			}
+
+			if (status == NO_ERROR) {
+				usb_set_intfdata(intf, bosto);
+				return status;
+			}
+
 			usb_free_coherent(dev, bosto->features->pkg_len,
 						bosto->data, bosto->data_dma);
-			kfree(bosto);
-			return status;
 		}
 
-		usb_set_intfdata(intf, bosto);
 	} else {
 		status = -ENOMEM;
-		kfree(bosto);
 	}
+		
+	kfree(bosto);
 	return status;
 }
 
