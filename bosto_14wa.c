@@ -467,7 +467,7 @@ static int bosto_probe(struct usb_interface *intf, const struct usb_device_id *i
 			GFP_KERNEL, &bosto->data_dma);
 
 		if (bosto->data != NULL) {
-				bosto->usbdev = dev;
+			bosto->usbdev = dev;
 			strlcpy(bosto->stylus_name, bosto->features->name,
 				sizeof(bosto->stylus_name));
 			strlcat(bosto->stylus_name, " stylus",
@@ -501,7 +501,7 @@ static int bosto_probe(struct usb_interface *intf, const struct usb_device_id *i
 	} else {
 		status = -ENOMEM;
 	}
-		
+
 	kfree(bosto);
 	return status;
 }
