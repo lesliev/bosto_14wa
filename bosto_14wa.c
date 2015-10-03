@@ -50,8 +50,8 @@ MODULE_LICENSE(DRIVER_LICENSE);
 #define BOSTO_TABLET_INT_SUB_CLASS 0x0001
 #define BOSTO_TABLET_INT_PROTOCOL  0x0002
 
-/*  Delay between TOOL_IN event and first reported pressure > 0. (mS) Used to 
- * supress settle time for pen ABS positions.
+/* Delay between TOOL_IN event and first reported pressure > 0 (in ms).
+ * Used to supress settle time for pen ABS positions.
  */
 #define PEN_WRITE_DELAY  230
 #define PKGLEN_MAX        10
@@ -150,7 +150,7 @@ static void bosto_tool_in(struct bosto *bosto, unsigned long *stamp, u8 pen_end)
 		break;
 
 	/* Stylus Eraser in prox */
-	case 0xa0: 
+	case 0xa0:
 		id = ERASER_DEVICE_ID;
 		tool = BTN_TOOL_RUBBER;
 		break;
@@ -189,17 +189,17 @@ static void bosto_pen_float(struct bosto *bosto, u16 *p, u16 *x, u16 *y, u8 *dat
 	}
 }
 
-static void bosto_pen_contact(struct bosto *bosto, u16 *p, u16 *x, u16 *y, 
-	unsigned long stamp, u8 *data) 
+static void bosto_pen_contact(struct bosto *bosto, u16 *p, u16 *x, u16 *y,
+	unsigned long stamp, u8 *data)
 {
 	struct input_dev *input_dev;
 
-	/* 
-	 * All a little strange; these 4 bytes are always seen whenever the pen 
-	 * is in contact with the tablet. 'e0 + e1', without the stylus button 
-	 * pressed and 'e2 + e3' with the stylus button pressed. Either of the 
-	 * buttons. In either case the byte value jitters between a pair of 
-	 * either of the two states dependent on the button press. 
+	/*
+	 * All a little strange; these 4 bytes are always seen whenever the pen
+	 * is in contact with the tablet. 'e0 + e1', without the stylus button
+	 * pressed and 'e2 + e3' with the stylus button pressed. Either of the
+	 * buttons. In either case the byte value jitters between a pair of
+	 * either of the two states dependent on the button press.
 	 */
 
 	input_dev = get_current_input(bosto);
@@ -209,11 +209,11 @@ static void bosto_pen_contact(struct bosto *bosto, u16 *p, u16 *x, u16 *y,
 	*x = (data[1] << 8) | data[2];      /* Set x ABS */
 	*y = (data[3] << 8) | data[4];      /* Set y ABS */
 
-	/* 
-	 * Set 2048 Level pressure sensitivity.                   
-	 * NOTE: The pen button magnifies the pressure sensitivity. Bring 
-	 * the pen in with the button pressed, ignore the right click response 
-	 * and keep the button held down. Enjoy the pressure magnification. 
+	/*
+	 * Set 2048 Level pressure sensitivity.
+	 * NOTE: The pen button magnifies the pressure sensitivity. Bring
+	 * the pen in with the button pressed, ignore the right click response
+	 * and keep the button held down. Enjoy the pressure magnification.
 	 */
 
 	*p = jiffies > stamp ? (data[5] << 3) | ((data[6] & 0xc0) >> 5) : 0;
@@ -229,7 +229,7 @@ static void bosto_pen_contact(struct bosto *bosto, u16 *p, u16 *x, u16 *y,
 }
 
 
-static void bosto_parse_packet(struct bosto *bosto) 
+static void bosto_parse_packet(struct bosto *bosto)
 {
 	unsigned char *data = bosto->data;
 	struct input_dev *input_dev;
@@ -239,9 +239,9 @@ static void bosto_parse_packet(struct bosto *bosto)
 	u16 p = 0;
 	static unsigned long stamp;
 
-	dev_dbg(&dev->dev, 
+	dev_dbg(&dev->dev,
 		"Bosto packet: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
-		data[0], data[1], data[2], data[3], data[4], data[5], data[6], 
+		data[0], data[1], data[2], data[3], data[4], data[5], data[6],
 		data[7], data[8], data[9]);
 
 	switch (data[0]) {
@@ -254,7 +254,7 @@ static void bosto_parse_packet(struct bosto *bosto)
 				bosto->current_id, bosto->current_tool);
 			break;
 
-		case 0xc2:   
+		case 0xc2:
 			bosto_tool_in(bosto, &stamp, data[3]);
 			dev_dbg(&dev->dev, "TOOL IN: ID:Tool %x:%x\n",
 				bosto->current_id, bosto->current_tool);
@@ -287,7 +287,7 @@ static void bosto_parse_packet(struct bosto *bosto)
 		dev_dbg(&dev->dev, "Error packet. Packet data[0]:  %02x ", data[0]);
 		break;
 	}
-	
+
 	input_dev = get_current_input(bosto);
 	input_report_abs(input_dev, ABS_X, le16_to_cpup((__le16 *)&x));
 	input_report_abs(input_dev, ABS_Y, le16_to_cpup((__le16 *)&y));
@@ -374,9 +374,9 @@ static bool get_features(struct usb_device *dev, struct bosto *bosto)
 	return false;
 }
 
-static int bosto_create_input_device(struct usb_interface *intf, 
-	struct usb_device* dev, struct bosto* bosto, struct urb** urb, 
-	struct input_dev** device, const char* device_name, 
+static int bosto_create_input_device(struct usb_interface *intf,
+	struct usb_device* dev, struct bosto* bosto, struct urb** urb,
+	struct input_dev** device, const char* device_name,
 	int (*open)(struct input_dev*), void (*close)(struct input_dev*))
 {
 	int i;
@@ -386,9 +386,9 @@ static int bosto_create_input_device(struct usb_interface *intf,
 	*urb = usb_alloc_urb(0, GFP_KERNEL);
 	if (*urb) {
 		endpoint = &intf->cur_altsetting->endpoint[0].desc;
-		usb_fill_int_urb(*urb, dev, usb_rcvintpipe(dev, 
-			endpoint->bEndpointAddress), bosto->data, 
-			bosto->features->pkg_len, bosto_irq, bosto, 
+		usb_fill_int_urb(*urb, dev, usb_rcvintpipe(dev,
+			endpoint->bEndpointAddress), bosto->data,
+			bosto->features->pkg_len, bosto_irq, bosto,
 			endpoint->bInterval);
 
 		(*urb)->transfer_dma = bosto->data_dma;
@@ -426,9 +426,9 @@ static int bosto_create_input_device(struct usb_interface *intf,
 				__set_bit(hw_mscevents[i], (*device)->mscbit);
 			}
 
-			input_set_abs_params(*device, ABS_X, 0, 
+			input_set_abs_params(*device, ABS_X, 0,
 					bosto->features->max_x, 0, 0);
-			input_set_abs_params(*device, ABS_Y, 0, 
+			input_set_abs_params(*device, ABS_Y, 0,
 					bosto->features->max_y, 0, 0);
 			input_set_abs_params(*device, ABS_PRESSURE, 0,
 					bosto->features->max_pressure, 0, 0);
@@ -456,22 +456,22 @@ static int bosto_probe(struct usb_interface *intf, const struct usb_device_id *i
 	printk (KERN_INFO "Bosto_Probe checking Tablet.\n");
 	bosto = kzalloc(sizeof(struct bosto), GFP_KERNEL);
 
-	if (bosto && get_features(dev, bosto) && 
+	if (bosto && get_features(dev, bosto) &&
 		(bosto->data = usb_alloc_coherent(dev, bosto->features->pkg_len,
 			GFP_KERNEL, &bosto->data_dma)) != NULL) {
 
 		bosto->usbdev = dev;
-		strlcpy(bosto->stylus_name, bosto->features->name, 
+		strlcpy(bosto->stylus_name, bosto->features->name,
 			sizeof(bosto->stylus_name));
-		strlcat(bosto->stylus_name, " stylus", 
+		strlcat(bosto->stylus_name, " stylus",
 			sizeof(bosto->stylus_name));
-		strlcpy(bosto->eraser_name, bosto->features->name, 
+		strlcpy(bosto->eraser_name, bosto->features->name,
 			sizeof(bosto->eraser_name));
-		strlcat(bosto->eraser_name, " eraser", 
+		strlcat(bosto->eraser_name, " eraser",
 			sizeof(bosto->eraser_name));
 
-		status = bosto_create_input_device(intf, dev, bosto, 
-				&bosto->urb0, &bosto->stylus, bosto->stylus_name, 
+		status = bosto_create_input_device(intf, dev, bosto,
+				&bosto->urb0, &bosto->stylus, bosto->stylus_name,
 				bosto_stylus_open, bosto_stylus_close);
 
 		if (status == NO_ERROR) {
@@ -481,7 +481,7 @@ static int bosto_probe(struct usb_interface *intf, const struct usb_device_id *i
 		}
 
 		if (status != NO_ERROR) {
-			usb_free_coherent(dev, bosto->features->pkg_len, 
+			usb_free_coherent(dev, bosto->features->pkg_len,
 						bosto->data, bosto->data_dma);
 			kfree(bosto);
 			return status;
@@ -511,10 +511,10 @@ static void bosto_disconnect(struct usb_interface *intf)
 
 static const struct usb_device_id bosto_ids[] = {
 	{ USB_DEVICE_AND_INTERFACE_INFO(
-		USB_VENDOR_ID_HANWANG, 
-		USB_PRODUCT_BOSTO14WA, 
-		BOSTO_TABLET_INT_CLASS, 
-		BOSTO_TABLET_INT_SUB_CLASS, 
+		USB_VENDOR_ID_HANWANG,
+		USB_PRODUCT_BOSTO14WA,
+		BOSTO_TABLET_INT_CLASS,
+		BOSTO_TABLET_INT_SUB_CLASS,
 		BOSTO_TABLET_INT_PROTOCOL) },
 	{}
 };
