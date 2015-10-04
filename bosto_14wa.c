@@ -39,8 +39,8 @@ MODULE_AUTHOR("Tomasz Flis <tflis84@gmail.com>");
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE(DRIVER_LICENSE);
 
-#define USB_VENDOR_ID_HANWANG      0x0b57
-#define USB_PRODUCT_BOSTO14WA      0x9018
+#define USB_VENDOR_ID_HANWANG		0x0b57
+#define USB_DEVICE_ID_BOSTO14WA_2	0x9018
 
 #define BOSTO_TABLET_INT_CLASS     0x0003
 #define BOSTO_TABLET_INT_SUB_CLASS 0x0001
@@ -95,7 +95,7 @@ struct bosto_features {
 };
 
 static const struct bosto_features features_array[] = {
-	{ USB_PRODUCT_BOSTO14WA, "Bosto Kingtee 14WA", BOSTO_14WA, PKGLEN_MAX,
+	{ USB_DEVICE_ID_BOSTO14WA_2, "Bosto Kingtee 14WA", BOSTO_14WA, PKGLEN_MAX,
 			0x27de, 0x1cfe, 0x3f, 0x7f, 2048 },
 };
 
@@ -523,7 +523,7 @@ static void bosto_disconnect(struct usb_interface *intf)
 static const struct usb_device_id bosto_ids[] = {
 	{ USB_DEVICE_AND_INTERFACE_INFO(
 		USB_VENDOR_ID_HANWANG,
-		USB_PRODUCT_BOSTO14WA,
+		USB_DEVICE_ID_BOSTO14WA_2,
 		BOSTO_TABLET_INT_CLASS,
 		BOSTO_TABLET_INT_SUB_CLASS,
 		BOSTO_TABLET_INT_PROTOCOL) },
