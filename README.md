@@ -90,6 +90,17 @@ xinput --map-to-output 'Bosto Kingtee 14WA eraser' HDMI1
 The script gives you a menu, which is sometimes faster - and can reset the mapping like so:
 `./inputtransform --reset`
 
+Stylus Buttons
+==============
+
+The stylus button emulates a middle-click, which allows panning in many applications. Previous versions of the driver emulated a right-click. If you desperately want that back, there are a few references like the following in which you can change BTN_STYLUS to to BTN_STYLUS2 before compiling:
+
+```
+input_report_key(input_dev, BTN_STYLUS, 0);
+input_report_key(input_dev, BTN_STYLUS, 1);
+```
+
+The larger Bosto stylus has a button that can rock to two positions but unfortunately both positions send the same signal back to the computer so it can't be used to perform both right and middle-click.
 
 Uninstalling
 ============
