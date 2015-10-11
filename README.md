@@ -129,8 +129,6 @@ sudo tail -f /var/log/syslog
 Feedback
 ========
 
-The best place for feedback is the Bost forum below:
-http://forum.bosto.co/viewforum.php?f=93
-
-You can also use the Github issue tracker if you like.
+The best place for feedback is the Bosto forum: http://forum.bosto.co/viewforum.php?f=93
+You can also use the Github issue tracker for issues specific to the driver.
 
