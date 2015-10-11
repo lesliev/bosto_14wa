@@ -64,7 +64,31 @@ sudo make install
 
 Now if you plug in the tablet, the pen should work right away. If not, please post an issue and we'll try to improve the code.
 
-You will get best results if you run the 'displays' program and configure the tablet and main screen to mirror each other. If your screen resolutions don't match or you don't want to use mirror mode, I've read that you can use 'xinput' to map the stylus to only the tablet but I've not tried it yet.
+Multiple screens
+================
+
+You will get best results if you run the 'displays' program and configure the tablet and main screen to mirror each other - but this means you get "lowest common denominator" resolution on both screens. Still, that's not always bad because lower resolution makes the tablet perform a lot better.
+
+If your screen resolutions don't match or you want multiple screens, you can use 'xinput' to map the stylus to only the tablet screen. I've written a script to do that:
+
+```bash
+cd scripts
+./inputtransform
+```
+
+This calculates and then uses xinput to apply a "coordinate transformation matrix".
+Alternatively, xinput can do the same calculations and you don't need the script. This is how:
+
+1. Look up the name of the monitor and the stylus/eraser devices by running `xrandr` and `xinput`.
+2. Run xinput --map-to-output for each device:
+
+```bash
+xinput --map-to-output 'Bosto Kingtee 14WA stylus' HDMI1
+xinput --map-to-output 'Bosto Kingtee 14WA eraser' HDMI1
+```
+
+The script gives you a menu, which is sometimes faster - and can reset the mapping like so:
+`./inputtransform --reset`
 
 
 Uninstalling
@@ -105,6 +129,8 @@ sudo tail -f /var/log/syslog
 Feedback
 ========
 
-The best place for feedback is probably the Bosto community Google Group:
-https://groups.google.com/forum/#!categories/bosto-user-group/mac--linux-discussion
+The best place for feedback is the Bost forum below:
+http://forum.bosto.co/viewforum.php?f=93
+
+You can also use the Github issue tracker if you like.
 
