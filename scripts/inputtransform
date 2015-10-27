@@ -29,9 +29,9 @@ class Display
   attr_reader :name, :panning, :orientation, :physical_size
 
   def initialize(header, lines)
-    if header =~ /^(\w+) disconnected/
+    if header =~ /^(.*) disconnected/
       @disconnected = true
-    elsif header =~ /(\w+) connected (primary |)(\d+x\d+\+\d+\+\d+) \((.*?)\) (\d+mm x \d+mm)/
+    elsif header =~ /(.*) connected (primary |)(\d+x\d+\+\d+\+\d+) \((.*?)\) (\d+mm x \d+mm)/
       @disconnected = false
 
       @name, @primary, @panning, @orientation, @physical_size = $1, $2, $3, $4, $5
@@ -79,7 +79,7 @@ class Xrandr
       if l =~ /^Screen/
         @screens << Screen.new(l)
         disp_line = nil
-      elsif l =~ /^(\w+) (dis|)connected/
+      elsif l =~ /^(.*) (dis|)connected/
         disp_line = l
       elsif disp_line
         @displays[disp_line] << displays
